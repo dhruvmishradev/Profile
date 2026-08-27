@@ -39,10 +39,6 @@ if (!USERNAME) {
   console.error("Missing GH_USERNAME env var");
   process.exit(1);
 }
-if (!TOKEN) {
-  console.error("Missing GH_TOKEN / GITHUB_TOKEN env var");
-  process.exit(1);
-}
 
 const QUERY = `
   query($login: String!) {
@@ -63,6 +59,32 @@ const QUERY = `
 `;
 
 async function fetchWeeks() {
+  if (!TOKEN) {
+    console.log("No GH_TOKEN found. Generating mock contribution data for local preview...");
+    const weeks = [];
+    const now = new Date();
+    for (let w = 0; w < COLS; w++) {
+      const days = [];
+      for (let d = 0; d < ROWS; d++) {
+        const count = Math.random() > 0.65 ? Math.floor(Math.random() * 8) : 0;
+        let color = "#161b22";
+        if (count > 0) {
+          if (count < 2) color = "#0e4429";
+          else if (count < 4) color = "#006d32";
+          else if (count < 6) color = "#26a641";
+          else color = "#39d353";
+        }
+        days.push({
+          date: new Date(now.getTime() - ((COLS - w) * 7 + (ROWS - d)) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          contributionCount: count,
+          color: color
+        });
+      }
+      weeks.push({ contributionDays: days });
+    }
+    return weeks;
+  }
+
   const res = await fetch("https://api.github.com/graphql", {
     method: "POST",
     headers: {
